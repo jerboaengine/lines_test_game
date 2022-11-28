@@ -1,7 +1,6 @@
 import QtQuick 2.15
 import QtQuick.Window 2.15
-import QtQuick.Layouts
-import QtQuick.Controls
+import QtQuick.Controls 2.15
 
 Window {
     width: 480

@@ -2,6 +2,7 @@
 #include "runtimeexception.h"
 #include <QSqlQuery>
 #include <QSqlRecord>
+#include <QVariant>
 
 DataSource::DataSource(QObject *parent)
     : QObject{parent}
