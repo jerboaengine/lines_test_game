@@ -3,5 +3,6 @@
         <file>main.qml</file>
         <file>PlayingField.qml</file>
         <file>ball.png</file>
+        <file>Ball.qml</file>
     </qresource>
 </RCC>

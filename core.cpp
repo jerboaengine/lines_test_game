@@ -1,6 +1,5 @@
 #include "core.h"
 #include <QRandomGenerator>
-#include "runtimeexception.h"
 
 static constexpr int NUMBER_BALLS_PER_STEP = 3;
 static constexpr int NUMBER_BALLS_SUCCESS = 5;
@@ -25,27 +24,24 @@ void Core::restoreGame()
 {
     source.loadFromDB();
     notifyFieldUpdate();
-    emit scoreUpdated(source.getScore());
+    emit updateScoreEvent(source.getScore());
 }
 
-void Core::generateNewBalls()
+bool Core::generateNewBalls()
 {
     for (int i = 0; i < NUMBER_BALLS_PER_STEP; i++) {
         int column;
         int row;
         int type;
         if (faindFreeRandomCell(column, row, type)) {
-            emit newRandomBall(column, row, type);
+            emit bornEvent(column, row, type);
             source.setTypeCell(column, row, type);
         } else {
-            gameOverHandler();
-            return;
+            return false;
         }
     }
 
-    if (freeCellsCount() < NUMBER_BALLS_PER_STEP) {
-        gameOverHandler();
-    }
+    return true;
 }
 
 bool Core::faindFreeRandomCell(int &column, int &row, int &type)
@@ -86,7 +82,7 @@ int Core::freeCellsCount() const
 
 void Core::gameOverHandler()
 {
-    emit gameOver();
+    emit gameOverEvent();
 }
 
 bool Core::findAndRemoveSequences()
@@ -167,7 +163,7 @@ bool Core::removeHorizontalDiapason(unsigned int row, unsigned int firstPos, uns
     if ((lastPos - firstPos + 1) >= NUMBER_BALLS_SUCCESS) {
         for (unsigned int column = firstPos; column < lastPos + 1; column++) {
             source.setTypeCell(column, row, 0);
-            emit removeBall(column, row);
+            emit deathEvent(column, row);
             addPoints();
         }
         return true;
@@ -180,7 +176,7 @@ bool Core::removeVerticalDiapason(unsigned int column, unsigned int firstPos, un
     if ((lastPos - firstPos + 1) >= NUMBER_BALLS_SUCCESS) {
         for (unsigned int row = firstPos; row < lastPos + 1; row++) {
             source.setTypeCell(column, row, 0);
-            emit removeBall(column, row);
+            emit deathEvent(column, row);
             addPoints();
         }
         return true;
@@ -188,38 +184,55 @@ bool Core::removeVerticalDiapason(unsigned int column, unsigned int firstPos, un
     return false;
 }
 
-void Core::moveBall(int columnFrom, int rowFrom, int columnTo, int rowTo)
+bool Core::move(int columnFrom, int rowFrom, int columnTo, int rowTo)
 {
-    if (source.getTypeCell(columnFrom, rowFrom) < 0 || source.getTypeCell(columnTo, rowTo) != 0) {
-        throw RuntimeException("Core::moveBall: cellFrom.type < 0 || cellTo.type != 0");
+    if (!isPossibleMove(columnFrom, rowFrom, columnTo, rowTo)) {
+        return false;
     }
 
     source.swap(columnFrom, rowFrom, columnTo, rowTo);
 
-    int typeTo = source.getTypeCell(columnTo, rowTo);
-    int typeFrom = source.getTypeCell(columnFrom, rowFrom);
-    if (typeTo < 0 || typeFrom != 0) {
-        throw RuntimeException("Core::moveBall: typeTo < 0 || typeFrom != 0");
+    emit moveEvent(columnFrom, rowFrom, columnTo, rowTo);
+
+
+    if (!findAndRemoveSequences()) {
+        if (generateNewBalls()) {
+            findAndRemoveSequences();
+        } else {
+            return true;
+        }
     }
 
-    emit setBall(columnTo, rowTo, typeTo);
-    emit setBall(columnFrom, rowFrom, typeFrom);
-    if (!findAndRemoveSequences()) {
-        generateNewBalls();
-        findAndRemoveSequences();
+    if (freeCellsCount() < NUMBER_BALLS_PER_STEP) {
+        gameOverHandler();
     }
+
+    return true;
+}
+
+bool Core::isPossibleMove(int columnFrom, int rowFrom, int columnTo, int rowTo)
+{
+    if (source.getTypeCell(columnFrom, rowFrom) == EMPTY_CELL) {
+        return false;
+    }
+
+    if (source.getTypeCell(columnTo, rowTo) != EMPTY_CELL) {
+        return false;
+    }
+
+    return true;
 }
 
 void Core::addPoints()
 {
     source.setScore(source.getScore() + BALL_SCORE_POINTS);
-    emit scoreUpdated(source.getScore());
+    emit updateScoreEvent(source.getScore());
 }
 
 void Core::clearScore()
 {
     source.setScore(0);
-    emit scoreUpdated(source.getScore());
+    emit updateScoreEvent(source.getScore());
 }
 
 void Core::notifyFieldUpdate()
@@ -227,7 +240,11 @@ void Core::notifyFieldUpdate()
     for (unsigned int row = 0; row < source.rows(); row++) {
         for (unsigned int column = 0; column < source.columns(); column++) {
             int state = source.getTypeCell(column, row);
-            emit setBall(column, row, state);
+            if (state != EMPTY_CELL) {
+                emit bornEvent(column, row, state);
+            } else {
+                emit deathEvent(column, row);
+            }
         }
     }
 }

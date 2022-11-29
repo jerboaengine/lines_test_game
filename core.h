@@ -10,23 +10,23 @@ class Core : public QObject
 public:
     explicit Core(QObject *parent = nullptr);
 
-public slots:
     void newGame();
     void restoreGame();
-    void generateNewBalls();
-    void moveBall(int columnFrom, int rowFrom, int columnTo, int rowTo);
+    bool move(int columnFrom, int rowFrom, int columnTo, int rowTo);
 
 signals:
-    void gameOver();
-    void newRandomBall(int column, int row, int type);
-    void setBall(int column, int row, int type);
-    void removeBall(int column, int row);
-    void scoreUpdated(unsigned int score);
+    void gameOverEvent();
+    void bornEvent(int column, int row, int type);
+    void deathEvent(int column, int row);
+    void updateScoreEvent(unsigned int score);
+    void moveEvent(int columnFrom, int rowFtom, int columnTo, int rowTo);
 
 private:
+    bool isPossibleMove(int columnFrom, int rowFrom, int columnTo, int rowTo);
     bool faindFreeRandomCell(int &column, int &row, int &type);
     int freeCellsCount() const;
     void gameOverHandler();
+    bool generateNewBalls();
     bool findAndRemoveSequences();
     bool findAndRemoveHorizontalSequences();
     bool findAndRemoveVerticalSequences();

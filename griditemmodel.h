@@ -35,22 +35,18 @@ public:
 
     QHash<int, QByteArray> roleNames() const override;
 
-    //Q_INVOKABLE void moveBall(int columnFrom, int rowFrom, int columnTo, int rowTo);
-    Q_INVOKABLE void updateData();
     Q_INVOKABLE void forgetBall(int column, int row);
+    Q_INVOKABLE int getTypeBall(int column, int row);
+    Q_INVOKABLE void removeBall(int column, int row);
+    Q_INVOKABLE void insertBall(int column, int row, int type);
 
 public slots:
     void addNewBall(int column, int row, int type);
-    void setBall(int column, int row, int type);
     void markAsRemoveBall(int column, int row);
 
-signals:
-    void newGame();
-    void moveBall(int columnFrom, int rowFrom, int columnTo, int rowTo);
-    void scoreUpdated(unsigned int score);
-    void gameOver();
-
 private:
+    void updateCellData(int column, int row);
+
     Cell arrayCells2D[FIELD_SIDE_LENGTH][FIELD_SIDE_LENGTH];
 };
 

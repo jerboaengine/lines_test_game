@@ -2,7 +2,7 @@
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
 #include "griditemmodel.h"
-#include "core.h"
+#include "agent.h"
 #include <QQuickWindow>
 
 int main(int argc, char *argv[])
@@ -13,30 +13,25 @@ int main(int argc, char *argv[])
     QGuiApplication app(argc, argv);
     QQmlApplicationEngine engine;
 
-    GridItemModel gridItemModel;
+
 
     QQmlContext *qml_context = engine.rootContext();
+
+    Agent agent;
+    GridItemModel gridItemModel;
+
+    qml_context->setContextProperty("agent", &agent);
     qml_context->setContextProperty("gridItemModel", &gridItemModel);
 
     const QUrl url(QStringLiteral("qrc:/main.qml"));
 
-    Core core;
-
-    QObject::connect(&core, &Core::newRandomBall, &gridItemModel, &GridItemModel::addNewBall);
-    QObject::connect(&core, &Core::scoreUpdated, &gridItemModel, &GridItemModel::scoreUpdated);
-    QObject::connect(&core, &Core::removeBall, &gridItemModel, &GridItemModel::markAsRemoveBall);
-    QObject::connect(&core, &Core::setBall, &gridItemModel, &GridItemModel::setBall);
-    QObject::connect(&core, &Core::gameOver, &gridItemModel, &GridItemModel::gameOver);
-    QObject::connect(&gridItemModel, &GridItemModel::moveBall, &core, &Core::moveBall);
-    QObject::connect(&gridItemModel, &GridItemModel::newGame, &core, &Core::newGame);
     QObject::connect(&engine, &QQmlApplicationEngine::objectCreated,
-                     &app, [url, &core, &gridItemModel](QObject *obj, const QUrl &objUrl) {
+                     &app, [url, &agent](QObject *obj, const QUrl &objUrl) {
         if (!obj && url == objUrl) {
             QCoreApplication::exit(-1);
         }
 
-        core.restoreGame();
-        gridItemModel.updateData();
+        agent.restoreGameRequest();
     }, Qt::QueuedConnection);
     engine.load(url);
 

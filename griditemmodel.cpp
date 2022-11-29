@@ -2,7 +2,6 @@
 #include <QString>
 
 static constexpr auto BORN_SOURCE = "born";
-static constexpr auto SET_SOURCE = "set";
 static constexpr auto REMOVE_SOURCE = "remove";
 
 GridItemModel::GridItemModel(QObject *parent)
@@ -72,36 +71,17 @@ QHash<int, QByteArray> GridItemModel::roleNames() const
     return roles;
 }
 
-void GridItemModel::updateData()
-{
-    QModelIndex topLeft = createIndex(0, 0);
-    QModelIndex bottomRight = createIndex(FIELD_SIZE, 0);
-    emit dataChanged(topLeft, bottomRight);
-}
-
 void GridItemModel::addNewBall(int column, int row, int type)
 {
     arrayCells2D[column][row].type = type;
     arrayCells2D[column][row].sourceType = BORN_SOURCE;
-    const int indexItem = FIELD_SIDE_LENGTH * column + row;
-    QModelIndex topLeft = createIndex(indexItem, 0);
-    QModelIndex bottomRight = createIndex(indexItem, 0);
-    emit dataChanged(topLeft, bottomRight);
-}
-
-void GridItemModel::setBall(int column, int row, int type)
-{
-    arrayCells2D[column][row].type = type;
-    arrayCells2D[column][row].sourceType = SET_SOURCE;
+    updateCellData(column, row);
 }
 
 void GridItemModel::markAsRemoveBall(int column, int row)
 {
     arrayCells2D[column][row].sourceType = REMOVE_SOURCE;
-    const int indexItem = FIELD_SIDE_LENGTH * column + row;
-    QModelIndex topLeft = createIndex(indexItem, 0);
-    QModelIndex bottomRight = createIndex(indexItem, 0);
-    emit dataChanged(topLeft, bottomRight);
+    updateCellData(column, row);
 }
 
 void GridItemModel::forgetBall(int column, int row)
@@ -111,10 +91,32 @@ void GridItemModel::forgetBall(int column, int row)
         cell.sourceType.clear();
         cell.type = 0;
 
-        const int indexItem = FIELD_SIDE_LENGTH * column + row;
-        QModelIndex topLeft = createIndex(indexItem, 0);
-        QModelIndex bottomRight = createIndex(indexItem, 0);
-        emit dataChanged(topLeft, bottomRight);
+        updateCellData(column, row);
     }
 }
 
+int GridItemModel::getTypeBall(int column, int row)
+{
+    return arrayCells2D[column][row].type;
+}
+
+void GridItemModel::removeBall(int column, int row)
+{
+    arrayCells2D[column][row].type = EMPTY_CELL;
+    arrayCells2D[column][row].sourceType.clear();
+    updateCellData(column, row);
+}
+
+void GridItemModel::insertBall(int column, int row, int type)
+{
+    arrayCells2D[column][row].type = type;
+    updateCellData(column, row);
+}
+
+void GridItemModel::updateCellData(int column, int row)
+{
+    const int indexItem = FIELD_SIDE_LENGTH * column + row;
+    QModelIndex topLeft = createIndex(indexItem, 0);
+    QModelIndex bottomRight = createIndex(indexItem, 0);
+    emit dataChanged(topLeft, bottomRight);
+}

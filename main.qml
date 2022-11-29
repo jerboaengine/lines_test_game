@@ -10,25 +10,7 @@ Window {
 
     PlayingField {
         id: playingField
-        Connections {
-            target: gridItemModel
-            function onScoreUpdated(score) {
-                var scoreText = "Socore: " + score
-                if (scoreTitle.text !== scoreText) {
-                    scoreTitle.text = scoreText
-                    animation.start()
-                }
 
-                if (score === 0) {
-                    gameOverMes.visible = false
-                    gridItemModel.updateData()
-                }
-            }
-
-            function onGameOver() {
-                gameOverMes.visible = true
-            }
-        }
     }
 
     Text {
@@ -46,7 +28,6 @@ Window {
         }
     }
 
-
     Text {
         id: gameOverMes
         color: "orange"
@@ -57,7 +38,6 @@ Window {
         visible: false
     }
 
-
     Button {
         height: 100
         width: 300
@@ -65,6 +45,25 @@ Window {
         text: "New Game"
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.bottom: parent.bottom
-        onClicked: gridItemModel.newGame()
+        onClicked: agent.newGameRequest()
+    }
+
+    Connections {
+        target: agent
+        function onUpdateScoreEvent(score) {
+            var scoreText = "Socore: " + score
+            if (scoreTitle.text !== scoreText) {
+                scoreTitle.text = scoreText
+                animation.start()
+            }
+
+            if (score === 0) {
+                gameOverMes.visible = false
+            }
+        }
+
+        function onGameOverEvent() {
+            gameOverMes.visible = true
+        }
     }
 }
