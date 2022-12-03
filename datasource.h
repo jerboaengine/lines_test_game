@@ -15,7 +15,7 @@ public:
     void clearGameFiled();
     unsigned int columns() const;
     unsigned int rows() const;
-    int getTypeCell(unsigned int column, unsigned int row) const;
+    char getTypeCell(unsigned int column, unsigned int row) const;
     void setTypeCell(unsigned int column, unsigned int row, int type);
     void swap(unsigned int columnFrom, int rowFrom, unsigned int columnTo, unsigned int rowTo);
     void setScore(unsigned int score);

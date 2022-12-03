@@ -7,13 +7,13 @@
 class RuntimeException : public QException
 {
 public:
-    explicit RuntimeException(QString what) : whatMes(what) { }
+    explicit RuntimeException(const char *what) : whatMes(what) { }
     void raise() const override { throw *this; }
     RuntimeException *clone() const override { return new RuntimeException(*this); }
-    const char* what() const noexcept override { return whatMes.toUtf8().data(); }
+    const char* what() const noexcept override { return whatMes; }
 
 private:
-    QString whatMes;
+    const char *whatMes;
 };
 
 #endif // RUNTIMEEXCEPTION_H

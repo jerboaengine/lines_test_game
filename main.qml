@@ -29,11 +29,9 @@ Window {
     }
 
     Text {
-        id: gameOverMes
-        color: "orange"
+        id: topMessage
         font.bold: true
         anchors.centerIn: playingField
-        text: "Game Over"
         font.pixelSize: 60
         visible: false
     }
@@ -45,7 +43,10 @@ Window {
         text: "New Game"
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.bottom: parent.bottom
-        onClicked: agent.newGameRequest()
+        onClicked: {
+            gridItemModel.clearAvailableCells()
+            agent.newGameRequest()
+        }
     }
 
     Connections {
@@ -58,12 +59,20 @@ Window {
             }
 
             if (score === 0) {
-                gameOverMes.visible = false
+                topMessage.visible = false
             }
         }
 
         function onGameOverEvent() {
-            gameOverMes.visible = true
+            topMessage.color = "orange"
+            topMessage.text = "Game Over!"
+            topMessage.visible = true
+        }
+
+        function onGameWinEvent() {
+            topMessage.color = "green"
+            topMessage.text = "You Win!"
+            topMessage.visible = true
         }
     }
 }

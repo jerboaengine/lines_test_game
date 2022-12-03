@@ -3,6 +3,8 @@
 
 #include <QObject>
 #include "datasource.h"
+#include <QList>
+#include <QPoint>
 
 class Core : public QObject
 {
@@ -12,20 +14,23 @@ public:
 
     void newGame();
     void restoreGame();
-    bool move(int columnFrom, int rowFrom, int columnTo, int rowTo);
+    bool move(unsigned int columnFrom, unsigned int rowFrom, unsigned int columnTo, int rowTo);
+    const QList<QPoint> getAvailableCellsFor(unsigned int column, unsigned int row);
 
 signals:
     void gameOverEvent();
-    void bornEvent(int column, int row, int type);
-    void deathEvent(int column, int row);
+    void gameWinEvent();
+    void bornEvent(unsigned int column, unsigned int row, int type);
+    void deathEvent(unsigned int column, unsigned int row);
     void updateScoreEvent(unsigned int score);
-    void moveEvent(int columnFrom, int rowFtom, int columnTo, int rowTo);
+    void moveEvent(unsigned int columnFrom, unsigned int rowFtom, unsigned int columnTo, unsigned int rowTo);
 
 private:
-    bool isPossibleMove(int columnFrom, int rowFrom, int columnTo, int rowTo);
-    bool faindFreeRandomCell(int &column, int &row, int &type);
+    bool isPossibleMove(unsigned int columnFrom, unsigned int rowFrom, unsigned int columnTo, unsigned int rowTo);
+    bool faindFreeRandomCell(unsigned int &column, unsigned int &row, int &type);
     int freeCellsCount() const;
     void gameOverHandler();
+    void gameWinHandler();
     bool generateNewBalls();
     bool findAndRemoveSequences();
     bool findAndRemoveHorizontalSequences();
@@ -35,9 +40,9 @@ private:
     void addPoints();
     void clearScore();
     void notifyFieldUpdate();
+    void searchFreeCells(int column, int row, char (&map)[FIELD_SIDE_LENGTH][FIELD_SIDE_LENGTH]);
 
     DataSource source;
-
 };
 
 #endif // CORE_H

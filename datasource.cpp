@@ -33,7 +33,7 @@ unsigned int DataSource::rows() const
     return FIELD_SIDE_LENGTH;
 }
 
-int DataSource::getTypeCell(unsigned int column, unsigned int row) const
+char DataSource::getTypeCell(unsigned int column, unsigned int row) const
 {
     validParamsOrThrow(column, row);
     return arrayCells2D[column][row].type;

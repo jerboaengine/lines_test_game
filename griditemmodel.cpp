@@ -49,6 +49,8 @@ QVariant GridItemModel::data(const QModelIndex &index, int role) const
             return index.row() / FIELD_SIDE_LENGTH;
         case RowRole:
             return index.row() % FIELD_SIDE_LENGTH;
+        case AvailableToStepRole:
+            return cell.isAvailableToStep;
         default:
             break;
     }
@@ -68,6 +70,7 @@ QHash<int, QByteArray> GridItemModel::roleNames() const
     roles[SourceTypeRole] = "source";
     roles[ColumnRole] = "column";
     roles[RowRole] = "row";
+    roles[AvailableToStepRole] = "available";
     return roles;
 }
 
@@ -111,6 +114,28 @@ void GridItemModel::insertBall(int column, int row, int type)
 {
     arrayCells2D[column][row].type = type;
     updateCellData(column, row);
+}
+
+void GridItemModel::setAvailableCells(QList<QPoint> cells)
+{
+    clearAvailableCells();
+    for (const QPoint &cell : cells) {
+        arrayCells2D[cell.x()][cell.y()].isAvailableToStep = true;
+        updateCellData(cell.x(), cell.y());
+    }
+}
+
+void GridItemModel::clearAvailableCells()
+{
+    for (unsigned int row = 0; row < FIELD_SIDE_LENGTH; row++) {
+        for (unsigned int column = 0; column < FIELD_SIDE_LENGTH; column++) {
+            Cell &cell = arrayCells2D[column][row];
+            if (cell.isAvailableToStep) {
+                cell.isAvailableToStep = false;
+                updateCellData(column, row);
+            }
+        }
+    }
 }
 
 void GridItemModel::updateCellData(int column, int row)

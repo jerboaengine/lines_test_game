@@ -5,6 +5,7 @@
 #include <QAbstractTableModel>
 #include "gamecell.h"
 #include "constants.h"
+#include <QPoint>
 
 class GridItemModel : public QAbstractItemModel
 {
@@ -13,13 +14,15 @@ class GridItemModel : public QAbstractItemModel
 public:
     struct Cell : public GameCell {
         QString sourceType;
+        bool isAvailableToStep = false;
     };
 
     enum ItemRoles {
         TypeRole = Qt::UserRole + 1,
         SourceTypeRole,
         ColumnRole,
-        RowRole
+        RowRole,
+        AvailableToStepRole
     };
 
     explicit GridItemModel(QObject *parent = nullptr);
@@ -39,6 +42,8 @@ public:
     Q_INVOKABLE int getTypeBall(int column, int row);
     Q_INVOKABLE void removeBall(int column, int row);
     Q_INVOKABLE void insertBall(int column, int row, int type);
+    Q_INVOKABLE void setAvailableCells(QList<QPoint> cells);
+    Q_INVOKABLE void clearAvailableCells();
 
 public slots:
     void addNewBall(int column, int row, int type);

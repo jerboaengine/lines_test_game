@@ -11,7 +11,6 @@ GridView {
     property int selectedRow: - 1
     property int selectedColumn: - 1
     property bool ballSelected: false
-    property bool movAnimationRunning: false
 
     width: size
     height: size
@@ -46,27 +45,31 @@ GridView {
         required property string source
         required property int row
         required property int column
+        required property bool available
 
         width: delegateSize
         height: delegateSize
 
         onClicked: {
-            if (selectedRow === row && selectedColumn === column || type === 0) {
-                if (ballSelected && type === 0) {
-                    agent.moveRequest(selectedColumn, selectedRow, column, row);
-                }
+            if (ballSelected && type === 0 && selectedColumn >= 0 && selectedRow >= 0) {
+                agent.moveRequest(selectedColumn, selectedRow, column, row);
+            }
 
+            if (selectedRow === row && selectedColumn === column || type === 0) {
                 selectedRow = -1
                 selectedColumn = -1
+                gridItemModel.clearAvailableCells()
             } else {
                 selectedRow = row
                 selectedColumn = column
+
+                gridItemModel.setAvailableCells(agent.getAvailableCellsFor(column, row))
             }
         }
 
         Rectangle {
             anchors.fill: parent
-            color: "#f7f7f7"
+            color: available ? "#98FB98" : "#f7f7f7"
             border.width: 1
             border.color: "#959595"
         }
@@ -123,6 +126,7 @@ GridView {
 
             states: State {
                 when: selectedRow === delegateItem.row && selectedColumn === delegateItem.column
+
                 PropertyChanges {
                     target: grid
                     ballSelected: true

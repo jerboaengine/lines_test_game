@@ -1,10 +1,13 @@
 #include "core.h"
 #include <QRandomGenerator>
+#include "runtimeexception.h"
+#include <QDebug>
 
 static constexpr int NUMBER_BALLS_PER_STEP = 3;
 static constexpr int NUMBER_BALLS_SUCCESS = 5;
 static constexpr int NUMBER_BALL_TYPES = 4;
 static constexpr int BALL_SCORE_POINTS = 2;
+
 
 Core::Core(QObject *parent)
     : QObject{parent}
@@ -17,6 +20,7 @@ void Core::newGame()
     source.clearGameFiled();
     notifyFieldUpdate();
     clearScore();
+
     generateNewBalls();
 }
 
@@ -30,8 +34,8 @@ void Core::restoreGame()
 bool Core::generateNewBalls()
 {
     for (int i = 0; i < NUMBER_BALLS_PER_STEP; i++) {
-        int column;
-        int row;
+        unsigned int column;
+        unsigned int row;
         int type;
         if (faindFreeRandomCell(column, row, type)) {
             emit bornEvent(column, row, type);
@@ -44,7 +48,7 @@ bool Core::generateNewBalls()
     return true;
 }
 
-bool Core::faindFreeRandomCell(int &column, int &row, int &type)
+bool Core::faindFreeRandomCell(unsigned int &column, unsigned int &row, int &type)
 {
     if (freeCellsCount() <= 0) {
         return false;
@@ -83,6 +87,11 @@ int Core::freeCellsCount() const
 void Core::gameOverHandler()
 {
     emit gameOverEvent();
+}
+
+void Core::gameWinHandler()
+{
+    emit gameWinEvent();
 }
 
 bool Core::findAndRemoveSequences()
@@ -184,7 +193,7 @@ bool Core::removeVerticalDiapason(unsigned int column, unsigned int firstPos, un
     return false;
 }
 
-bool Core::move(int columnFrom, int rowFrom, int columnTo, int rowTo)
+bool Core::move(unsigned int columnFrom, unsigned int rowFrom, unsigned int columnTo, int rowTo)
 {
     if (!isPossibleMove(columnFrom, rowFrom, columnTo, rowTo)) {
         return false;
@@ -194,33 +203,46 @@ bool Core::move(int columnFrom, int rowFrom, int columnTo, int rowTo)
 
     emit moveEvent(columnFrom, rowFrom, columnTo, rowTo);
 
-
     if (!findAndRemoveSequences()) {
         if (generateNewBalls()) {
             findAndRemoveSequences();
-        } else {
-            return true;
         }
     }
 
-    if (freeCellsCount() < NUMBER_BALLS_PER_STEP) {
+    int freeCells = freeCellsCount();
+    qDebug() << freeCells;
+    if (freeCells == 0) {
         gameOverHandler();
+    } else if (freeCells == FIELD_SIZE) {
+        gameWinHandler();
     }
 
     return true;
 }
 
-bool Core::isPossibleMove(int columnFrom, int rowFrom, int columnTo, int rowTo)
+bool Core::isPossibleMove(unsigned int columnFrom, unsigned int rowFrom, unsigned int columnTo, unsigned int rowTo)
 {
-    if (source.getTypeCell(columnFrom, rowFrom) == EMPTY_CELL) {
+    try {
+        if (source.getTypeCell(columnFrom, rowFrom) == EMPTY_CELL) {
+            return false;
+        }
+
+        if (source.getTypeCell(columnTo, rowTo) != EMPTY_CELL) {
+            return false;
+        }
+    } catch (RuntimeException &exception) {
+        qDebug() << exception.what();
         return false;
     }
 
-    if (source.getTypeCell(columnTo, rowTo) != EMPTY_CELL) {
-        return false;
+    const QList<QPoint> availableCells = getAvailableCellsFor(columnFrom, rowFrom);
+    for (const QPoint &cell : availableCells) {
+        if (cell.x() == columnTo && cell.y() == rowTo) {
+            return true;
+        }
     }
 
-    return true;
+    return false;
 }
 
 void Core::addPoints()
@@ -247,4 +269,49 @@ void Core::notifyFieldUpdate()
             }
         }
     }
+}
+
+const QList<QPoint> Core::getAvailableCellsFor(unsigned int column, unsigned int row)
+{
+    char fillFluidMap[FIELD_SIDE_LENGTH][FIELD_SIDE_LENGTH];
+    for (unsigned int r = 0; r < source.rows(); r++) {
+        for (unsigned int c = 0; c < source.columns(); c++) {
+            fillFluidMap[c][r] = source.getTypeCell(c, r);
+        }
+    }
+
+    searchFreeCells(column - 1, row, fillFluidMap);
+    searchFreeCells(column, row - 1, fillFluidMap);
+    searchFreeCells(column + 1, row , fillFluidMap);
+    searchFreeCells(column, row + 1, fillFluidMap);
+
+    QList<QPoint> freeCells;
+
+    for (unsigned int r = 0; r < source.rows(); r++) {
+        for (unsigned int c = 0; c < source.columns(); c++) {
+            if (fillFluidMap[c][r] == (char)-1) {
+                freeCells.append(QPoint(c, r));
+            }
+        }
+    }
+
+    return (const QList<QPoint>)freeCells;
+}
+
+void Core::searchFreeCells(int column, int row, char (&map)[FIELD_SIDE_LENGTH][FIELD_SIDE_LENGTH])
+{
+    if (column >= FIELD_SIDE_LENGTH || row >= FIELD_SIDE_LENGTH || column < 0 || row < 0) {
+        return;
+    }
+
+    if (map[column][row] != 0) {
+        return;
+    }
+
+    map[column][row] = -1;
+
+    searchFreeCells(column - 1, row, map);
+    searchFreeCells(column, row - 1, map);
+    searchFreeCells(column + 1, row , map);
+    searchFreeCells(column, row + 1, map);
 }
